@@ -1,0 +1,255 @@
+# MCP Development Environment - .gitignore
+# ==========================================
+
+# Environment Configuration
+.env
+.env.local
+.env.*.local
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.pyo
+*.pyd
+
+# Python Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+.env/
+pipenv/
+Pipfile.lock
+
+# Python Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.npm
+.eslintcache
+.yarn-integrity
+package-lock.json
+yarn.lock
+
+# Node.js Testing
+coverage/
+.nyc_output
+.coverage/
+
+# Logs
+logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Docker
+.docker/
+docker-compose.override.yml
+.dockerignore
+
+# Docker Volumes Data (keep structure, ignore contents)
+data/*
+!data/.gitkeep
+!data/sample.csv
+!data/config.json
+
+static/*
+!static/.gitkeep
+!static/readme.txt
+
+# Persistent Data
+postgres_data/
+redis_data/
+mongodb_data/
+elasticsearch_data/
+
+# Development Tools
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Temporary Files
+tmp/
+temp/
+.tmp/
+.temp/
+
+# Backup Files
+*.bak
+*.backup
+*.orig
+*.rej
+
+# SSL Certificates
+*.pem
+*.key
+*.crt
+*.csr
+*.p12
+*.pfx
+ssl/
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Cache Directories
+.cache/
+.parcel-cache/
+
+# Editor Files
+*.sublime-project
+*.sublime-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Visual Studio Code
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+!.vscode/launch.json.example
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Secrets and Keys
+secrets/
+*.secret
+*.private
+.secrets/
+credentials/
+keys/
+.aws/
+.gcp/
+
+# Local Configuration Overrides
+docker-compose.local.yml
+docker-compose.production.yml
+docker-compose.staging.yml
+
+# Testing Output
+test-results/
+test-output/
+screenshots/
+videos/
+
+# Profiling
+*.prof
+*.profile
+
+# Memory dumps
+*.hprof
+*.dump
+
+# Monitoring and Metrics
+metrics/
+monitoring/
+
+# Build artifacts
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Local development overrides
+local/
+.local/
+
+# Terraform (if used for infrastructure)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Kubernetes (if used)
+*.kubeconfig
+kube-config
+
+# Helm (if used)
+charts/*.tgz
+
+# Documentation build
+docs/_build/
+docs/.doctrees/
+
+# Local environment customizations
+.env.development
+.env.production
+.env.staging
+.env.test

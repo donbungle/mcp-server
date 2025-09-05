@@ -1,0 +1,195 @@
+version: '3.8'
+
+services:
+  # Python MCP Server
+  mcp-server:
+    container_name: ${PYTHON_CONTAINER_NAME:-mcp-dev-python}
+    build:
+      context: .
+      dockerfile: python.Dockerfile
+    ports:
+      - "${PYTHON_SERVER_PORT:-8000}:8000"
+      - "${PYTHON_DEBUG_PORT:-5678}:5678"  # Debug port
+    environment:
+      - PYTHONUNBUFFERED=${PYTHONUNBUFFERED:-1}
+      - PYTHONDONTWRITEBYTECODE=${PYTHONDONTWRITEBYTECODE:-1}
+      - DEBUG=${PYTHON_DEBUG:-true}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TZ=${TZ:-UTC}
+      - ENABLE_SQL_LOGGING=${ENABLE_SQL_LOGGING:-true}
+      - ENABLE_METRICS=${ENABLE_METRICS:-true}
+    volumes:
+      - ./src:/app/src
+      - ${DATA_VOLUME:-./data}:/app/data
+      - ./tests:/app/tests
+      - ${LOG_VOLUME:-./logs}:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    command: python -u src/main.py
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-5s}
+
+  # Node.js MCP Server
+  mcp-server-node:
+    container_name: ${NODE_CONTAINER_NAME:-mcp-dev-node}
+    build:
+      context: .
+      dockerfile: node.Dockerfile
+    ports:
+      - "${NODE_SERVER_PORT:-3000}:3000"
+      - "${NODE_DEBUG_PORT:-9229}:9229"  # Debug port
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - DEBUG=${DEBUG:-*}
+      - NPM_CONFIG_LOGLEVEL=${NPM_CONFIG_LOGLEVEL:-warn}
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=${REDIS_URL}
+      - TZ=${TZ:-UTC}
+      - ENABLE_HOT_RELOAD=${ENABLE_HOT_RELOAD:-true}
+      - ENABLE_METRICS=${ENABLE_METRICS:-true}
+    volumes:
+      - ./src-node:/app/src
+      - ${DATA_VOLUME:-./data}:/app/data
+      - ./package.json:/app/package.json
+      - ./package-lock.json:/app/package-lock.json
+      - ${LOG_VOLUME:-./logs}:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    command: npm run dev
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-5s}
+
+  # PostgreSQL Database
+  postgres:
+    container_name: ${POSTGRES_CONTAINER_NAME:-mcp-dev-postgres}
+    image: postgres:15-alpine
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-mcp_dev}
+      - POSTGRES_USER=${POSTGRES_USER:-mcp_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-mcp_password}
+      - POSTGRES_INITDB_ARGS=--auth-host=md5
+      - TZ=${TZ:-UTC}
+      # Performance tuning
+      - POSTGRES_SHARED_BUFFERS=${POSTGRES_SHARED_BUFFERS:-256MB}
+      - POSTGRES_WORK_MEM=${POSTGRES_WORK_MEM:-4MB}
+      - POSTGRES_MAINTENANCE_WORK_MEM=${POSTGRES_MAINTENANCE_WORK_MEM:-64MB}
+      - POSTGRES_MAX_CONNECTIONS=${POSTGRES_MAX_CONNECTIONS:-100}
+    volumes:
+      - ${DB_VOLUME:-postgres_data}:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./db/sample_data.sql:/docker-entrypoint-initdb.d/02-sample_data.sql
+      - ${LOG_VOLUME:-./logs}:/var/log/postgresql
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mcp_user} -d ${POSTGRES_DB:-mcp_dev}"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-5s}
+    command: >
+      postgres
+      -c shared_buffers=${POSTGRES_SHARED_BUFFERS:-256MB}
+      -c work_mem=${POSTGRES_WORK_MEM:-4MB}
+      -c maintenance_work_mem=${POSTGRES_MAINTENANCE_WORK_MEM:-64MB}
+      -c max_connections=${POSTGRES_MAX_CONNECTIONS:-100}
+      -c log_statement=${ENABLE_SQL_LOGGING:-all}
+      -c log_min_duration_statement=0
+
+  # Redis Cache
+  redis:
+    container_name: ${REDIS_CONTAINER_NAME:-mcp-dev-redis}
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    environment:
+      - TZ=${TZ:-UTC}
+    volumes:
+      - ${REDIS_VOLUME:-redis_data}:/data
+      - ${LOG_VOLUME:-./logs}:/var/log/redis
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-5s}
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory ${REDIS_MAXMEMORY:-512mb}
+      --maxmemory-policy ${REDIS_MAXMEMORY_POLICY:-allkeys-lru}
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+
+  # Nginx File Server
+  nginx:
+    container_name: ${NGINX_CONTAINER_NAME:-mcp-dev-nginx}
+    image: nginx:alpine
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    environment:
+      - TZ=${TZ:-UTC}
+      - NGINX_WORKER_PROCESSES=${NGINX_WORKER_PROCESSES:-auto}
+      - NGINX_WORKER_CONNECTIONS=${NGINX_WORKER_CONNECTIONS:-1024}
+      - NGINX_CLIENT_MAX_BODY_SIZE=${NGINX_CLIENT_MAX_BODY_SIZE:-100M}
+      - CORS_ORIGINS=${CORS_ORIGINS:-*}
+      - CORS_METHODS=${CORS_METHODS:-GET,POST,PUT,DELETE,OPTIONS}
+      - CORS_HEADERS=${CORS_HEADERS:-DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,Authorization}
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${DATA_VOLUME:-./data}:/usr/share/nginx/html/data:ro
+      - ${STATIC_VOLUME:-./static}:/usr/share/nginx/html/static:ro
+      - ${LOG_VOLUME:-./logs}:/var/log/nginx
+    restart: unless-stopped
+    networks:
+      - mcp-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: ${HEALTH_CHECK_INTERVAL:-30s}
+      timeout: ${HEALTH_CHECK_TIMEOUT:-10s}
+      retries: ${HEALTH_CHECK_RETRIES:-3}
+      start_period: ${HEALTH_CHECK_START_PERIOD:-5s}
+    depends_on:
+      - mcp-server
+      - mcp-server-node
+
+# Networks
+networks:
+  mcp-network:
+    driver: bridge
+    name: ${CONTAINER_PREFIX:-mcp-dev}-network
+
+# Volumes
+volumes:
+  postgres_data:
+    name: ${CONTAINER_PREFIX:-mcp-dev}-postgres-data
+    driver: local
+  redis_data:
+    name: ${CONTAINER_PREFIX:-mcp-dev}-redis-data
+    driver: local

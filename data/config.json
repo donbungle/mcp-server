@@ -1,0 +1,44 @@
+{
+  "application": {
+    "name": "MCP Development Server",
+    "version": "1.0.0",
+    "environment": "development",
+    "debug": true
+  },
+  "database": {
+    "host": "postgres",
+    "port": 5432,
+    "name": "mcp_dev",
+    "user": "mcp_user",
+    "ssl": false,
+    "pool": {
+      "min": 2,
+      "max": 10
+    }
+  },
+  "cache": {
+    "provider": "redis",
+    "host": "redis",
+    "port": 6379,
+    "ttl": 3600
+  },
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000,
+    "cors": {
+      "enabled": true,
+      "origins": ["*"]
+    }
+  },
+  "logging": {
+    "level": "info",
+    "format": "json",
+    "file": "/app/logs/app.log"
+  },
+  "features": {
+    "analytics": true,
+    "file_operations": true,
+    "database_tools": true,
+    "cache_operations": true
+  }
+}

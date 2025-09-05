@@ -1,0 +1,32 @@
+{
+  "name": "mcp-dev-server-node",
+  "version": "1.0.0",
+  "description": "Node.js MCP Development Server",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --inspect=0.0.0.0:9229 src/server.js",
+    "test": "jest",
+    "lint": "eslint src/",
+    "format": "prettier --write src/"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "pg": "^8.11.3",
+    "redis": "^4.6.10",
+    "csv-parser": "^3.0.0",
+    "fs-extra": "^11.1.1",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "eslint": "^8.52.0",
+    "prettier": "^3.0.3",
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["mcp", "server", "development", "docker"],
+  "author": "MCP Dev Team",
+  "license": "MIT"
+}
